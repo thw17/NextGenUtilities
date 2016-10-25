@@ -1,6 +1,9 @@
 import argparse
+import csv
 from Bio import SeqIO
-from Bio.seq import Seq
+from Bio.Alphabet import generic_dna
+from Bio.Seq import Seq
+from Bio.SeqRecord import SeqRecord
 
 
 def main():
@@ -8,6 +11,7 @@ def main():
 
 	args = parse_args()
 
+	output_fasta_collector = []
 	output_bed_collector = []
 	chrUn = Seq("", generic_dna)
 	start = 0
@@ -16,7 +20,23 @@ def main():
 		length = len(seq_record)
 		if length < args.size:
 			chrUn += seq_record.seq
-			temp_line = 
+			stop += length
+			output_bed_collector.append(
+				[args.supercontig_name, start, stop, seq_record.id])
+			start = stop
+		else:
+			output_bed_collector.append(
+				[seq_record.id, 0, len(seq_record), seq_record.id])
+			output_fasta_collector.append(seq_record)
+	chrUn_rec = SeqRecord(chrUn)
+	chrUn_rec.id = args.supercontig_name
+	output_fasta_collector.append(chrUn_rec)
+
+	# Write output
+	SeqIO.write(output_fasta_collector, args.output_fasta, "fasta")
+	with open(args.output_bed, "w") as f:
+		w = csv.writer(f, dialect="excel-tab")
+		w.writerows(output_bed_collector)
 
 
 def parse_args():
