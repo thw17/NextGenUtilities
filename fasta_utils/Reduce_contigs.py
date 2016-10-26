@@ -39,6 +39,9 @@ def main():
 						"\t".join(
 							[str(x) for x in [id_cleaned, 0, len(seq_record), id_cleaned]])))
 					outfasta.write(">{}".format(id_cleaned))
+					print wrap
+					print type(wrap)
+					print seq_record[0:20]
 					if wrap is not None:
 						for i in range(0, length, wrap):
 							outfasta.write(seq_record[i: i + wrap] + "\n")
