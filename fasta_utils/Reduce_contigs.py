@@ -14,7 +14,8 @@ def main():
 	chrUn = Seq("", generic_dna)
 	start = 0
 	stop = 0
-	wrap = args.wrap_length
+	if args.wrap_length is not None:
+		wrap = int(args.wrap_length)
 	with open(args.output_fasta, "w") as outfasta:
 		with open(args.output_bed, "w") as outbed:
 			for seq_record in SeqIO.parse(args.fasta, "fasta"):
