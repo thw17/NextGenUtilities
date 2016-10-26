@@ -16,22 +16,23 @@ def main():
 	chrUn = Seq("", generic_dna)
 	start = 0
 	stop = 0
-	fasta_out = FastaIO.FastaWriter(args.output_fasta)
-	for seq_record in SeqIO.parse(args.fasta, "fasta"):
-		length = len(seq_record)
-		if length < args.size:
-			chrUn += seq_record.seq
-			stop += length
-			output_bed_collector.append(
-				[args.supercontig_name, start, stop, seq_record.id])
-			start = stop
-		else:
-			output_bed_collector.append(
-				[seq_record.id, 0, len(seq_record), seq_record.id])
-			fasta_out.write_record(seq_record)
-	chrUn_rec = SeqRecord(chrUn)
-	chrUn_rec.id = args.supercontig_name
-	fasta_out.write_record(chrUn_rec)
+	with open(args.output_fasta, "w") as outfasta:
+		fasta_out = FastaIO.FastaWriter(outfasta)
+		for seq_record in SeqIO.parse(args.fasta, "fasta"):
+			length = len(seq_record)
+			if length < args.size:
+				chrUn += seq_record.seq
+				stop += length
+				output_bed_collector.append(
+					[args.supercontig_name, start, stop, seq_record.id])
+				start = stop
+			else:
+				output_bed_collector.append(
+					[seq_record.id, 0, len(seq_record), seq_record.id])
+				fasta_out.write_record(seq_record)
+		chrUn_rec = SeqRecord(chrUn)
+		chrUn_rec.id = args.supercontig_name
+		fasta_out.write_record(chrUn_rec)
 
 	# Write output
 	with open(args.output_bed, "w") as f:
