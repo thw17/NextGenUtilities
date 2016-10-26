@@ -41,19 +41,19 @@ def main():
 					outfasta.write(">{}".format(id_cleaned))
 					print wrap
 					print type(wrap)
-					print seq_record.seq[0:20]
+					print str(seq_record.seq[0:20])
 					if wrap is not None:
 						for i in range(0, length, wrap):
-							outfasta.write(seq_record[i: i + wrap] + "\n")
+							outfasta.write(str(seq_record.seq[i: i + wrap]) + "\n")
 					else:
-						outfasta.write(seq_record + "\n")
+						outfasta.write(seq_record.seq + "\n")
 			chrUn_rec = SeqRecord(chrUn)
 			chrUn_rec.id = args.supercontig_name
 			if wrap is not None:
 				for i in range(0, length, wrap):
-					outfasta.write(chrUn_rec[i: i + wrap] + "\n")
+					outfasta.write(chrUn_rec[i: i + wrap].seq + "\n")
 				else:
-					outfasta.write(chrUn_rec + "\n")
+					outfasta.write(chrUn_rec.seq + "\n")
 
 
 def parse_args():
