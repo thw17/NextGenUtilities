@@ -28,7 +28,7 @@ def main():
 				if length < 1:
 					continue
 				if length < args.size:
-					chrUn += seq_record.seq
+					chrUn += seq_record
 					stop += length
 					outbed.write("{}\n".format(
 						"\t".join(
@@ -41,16 +41,16 @@ def main():
 					outfasta.write(">{}".format(id_cleaned))
 					if wrap is not None:
 						for i in range(0, length, wrap):
-							outfasta.write(seq_record.seq[i: i + wrap] + "\n")
+							outfasta.write(seq_record[i: i + wrap] + "\n")
 					else:
-						outfasta.write(seq_record.seq + "\n")
+						outfasta.write(seq_record + "\n")
 			chrUn_rec = SeqRecord(chrUn)
 			chrUn_rec.id = args.supercontig_name
 			if wrap is not None:
 				for i in range(0, length, wrap):
-					outfasta.write(chrUn_rec.seq[i: i + wrap] + "\n")
+					outfasta.write(chrUn_rec[i: i + wrap] + "\n")
 				else:
-					outfasta.write(chrUn_rec.seq + "\n")
+					outfasta.write(chrUn_rec + "\n")
 
 
 def parse_args():
