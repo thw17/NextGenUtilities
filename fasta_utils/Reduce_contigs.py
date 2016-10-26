@@ -3,6 +3,7 @@ import csv
 from Bio import SeqIO
 from Bio.Alphabet import generic_dna
 from Bio.Seq import Seq
+from Bio.SeqIO import FastaIO
 from Bio.SeqRecord import SeqRecord
 
 
@@ -11,11 +12,11 @@ def main():
 
 	args = parse_args()
 
-	output_fasta_collector = []
 	output_bed_collector = []
 	chrUn = Seq("", generic_dna)
 	start = 0
 	stop = 0
+	fasta_out = FastaIO.FastaWriter(args.output_fasta)
 	for seq_record in SeqIO.parse(args.fasta, "fasta"):
 		length = len(seq_record)
 		if length < args.size:
@@ -27,13 +28,12 @@ def main():
 		else:
 			output_bed_collector.append(
 				[seq_record.id, 0, len(seq_record), seq_record.id])
-			output_fasta_collector.append(seq_record)
+			fasta_out.write_record(seq_record)
 	chrUn_rec = SeqRecord(chrUn)
 	chrUn_rec.id = args.supercontig_name
-	output_fasta_collector.append(chrUn_rec)
+	fasta_out.write_record(chrUn_rec)
 
 	# Write output
-	SeqIO.write(output_fasta_collector, args.output_fasta, "fasta")
 	with open(args.output_bed, "w") as f:
 		w = csv.writer(f, dialect="excel-tab")
 		w.writerows(output_bed_collector)
