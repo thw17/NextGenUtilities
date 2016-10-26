@@ -1,9 +1,7 @@
 import argparse
-import csv
 from Bio import SeqIO
 from Bio.Alphabet import generic_dna
 from Bio.Seq import Seq
-from Bio.SeqIO import FastaIO
 from Bio.SeqRecord import SeqRecord
 
 
@@ -12,32 +10,46 @@ def main():
 
 	args = parse_args()
 
-	output_bed_collector = []
+	# Set up variables for loops
 	chrUn = Seq("", generic_dna)
 	start = 0
 	stop = 0
+	wrap = args.wrap_length
 	with open(args.output_fasta, "w") as outfasta:
-		fasta_out = FastaIO.FastaWriter(outfasta)
-		for seq_record in SeqIO.parse(args.fasta, "fasta"):
-			length = len(seq_record)
-			if length < args.size:
-				chrUn += seq_record.seq
-				stop += length
-				output_bed_collector.append(
-					[args.supercontig_name, start, stop, seq_record.id])
-				start = stop
-			else:
-				output_bed_collector.append(
-					[seq_record.id, 0, len(seq_record), seq_record.id])
-				fasta_out.write_record(seq_record)
-		chrUn_rec = SeqRecord(chrUn)
-		chrUn_rec.id = args.supercontig_name
-		fasta_out.write_record(chrUn_rec)
-
-	# Write output
-	with open(args.output_bed, "w") as f:
-		w = csv.writer(f, dialect="excel-tab")
-		w.writerows(output_bed_collector)
+		with open(args.output_bed, "w") as outbed:
+			for seq_record in SeqIO.parse(args.fasta, "fasta"):
+				try:
+					length = len(seq_record)
+				except TypeError:
+					continue
+				id = seq_record.id
+				id_cleaned = id.replace("\n", " ").replace("\r", " ").replace("  ", " ")
+				if length < 1:
+					continue
+				if length < args.size:
+					chrUn += seq_record.seq
+					stop += length
+					outbed.write("{}\n".format(
+						"\t".join(
+							[str(x) for x in [args.supercontig_name, start, stop, id_cleaned]])))
+					start = stop
+				else:
+					outbed.write("{}\n".format(
+						"\t".join(
+							[str(x) for x in [id_cleaned, 0, len(seq_record), id_cleaned]])))
+					outfasta.write(">{}".format(id_cleaned))
+					if wrap is not None:
+						for i in range(0, length, wrap):
+							outfasta.write(seq_record.seq[i: i + wrap] + "\n")
+					else:
+						outfasta.write(seq_record.seq + "\n")
+			chrUn_rec = SeqRecord(chrUn)
+			chrUn_rec.id = args.supercontig_name
+			if wrap is not None:
+				for i in range(0, length, wrap):
+					outfasta.write(chrUn_rec.seq[i: i + wrap] + "\n")
+				else:
+					outfasta.write(chrUn_rec.seq + "\n")
 
 
 def parse_args():
@@ -64,6 +76,12 @@ def parse_args():
 	parser.add_argument(
 		"--supercontig_name", default="chrUn",
 		help="The name of the supercontig created from the filtered contigs")
+
+	parser.add_argument(
+		"--wrap_length", default=50,
+		help="Provide either intger length of each line to use "
+		"when writing sequence data or None to prevent wrapping and write "
+		"sequence on a single line")
 
 	args = parser.parse_args()
 
