@@ -35,7 +35,7 @@ def main():
 						[str(x) for x in [args.supercontig_name, start, stop, id_cleaned]])))
 				start = stop
 			else:
-				print "\t".join([str(x) for x in [id_cleaned, 0, len(seq_record), id_cleaned]])
+				print "{}\n".format("\t".join([str(x) for x in [id_cleaned, 0, len(seq_record), id_cleaned]]))
 				outbed.write("{}\n".format(
 					"\t".join(
 						[str(x) for x in [id_cleaned, 0, len(seq_record), id_cleaned]])))
