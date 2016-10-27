@@ -11,6 +11,7 @@ def main():
 	args = parse_args()
 
 	# Set up variables for loops
+	counter = 0
 	chrUn = Seq("", generic_dna)
 	start = 0
 	stop = 0
@@ -39,16 +40,17 @@ def main():
 						"\t".join(
 							[str(x) for x in [id_cleaned, 0, len(seq_record), id_cleaned]])))
 					outfasta.write(">{}".format(id_cleaned))
-					print wrap
-					print type(wrap)
-					print str(seq_record.seq[0:20])
 					if wrap is not None:
 						for i in range(0, length, wrap):
 							outfasta.write(str(seq_record.seq[i: i + wrap]) + "\n")
 					else:
 						outfasta.write(seq_record.seq + "\n")
+				counter += 1
+				if counter % 100 == 0:
+					print "{} records processed".format(counter)
 			chrUn_rec = SeqRecord(chrUn)
 			chrUn_rec.id = args.supercontig_name
+			length = len(SeqRecord(chrUn))
 			if wrap is not None:
 				for i in range(0, length, wrap):
 					outfasta.write(chrUn_rec[i: i + wrap].seq + "\n")
