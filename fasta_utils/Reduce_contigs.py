@@ -36,10 +36,11 @@ def main():
 							[str(x) for x in [args.supercontig_name, start, stop, id_cleaned]])))
 					start = stop
 				else:
-					outbed.write("{}\n".format(
+					print "\t".join("{}\n".format([str(x) for x in [args.supercontig_name, start, stop, id_cleaned]]))
+					outbed.write(
 						"\t".join(
-							[str(x) for x in [id_cleaned, 0, len(seq_record), id_cleaned]])))
-					outfasta.write(">{}".format(id_cleaned))
+							[str(x) for x in [id_cleaned, 0, len(seq_record), id_cleaned]]))
+					outfasta.write(">{}\n".format(id_cleaned))
 					if wrap is not None:
 						for i in range(0, length, wrap):
 							outfasta.write(str(seq_record.seq[i: i + wrap]) + "\n")
@@ -51,6 +52,7 @@ def main():
 			chrUn_rec = SeqRecord(chrUn)
 			chrUn_rec.id = args.supercontig_name
 			length = len(SeqRecord(chrUn))
+			outfasta.write(">{}\n".format(chrUn_rec.id))
 			if wrap is not None:
 				for i in range(0, length, wrap):
 					outfasta.write(chrUn_rec[i: i + wrap].seq + "\n")
