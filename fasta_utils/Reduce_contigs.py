@@ -36,10 +36,10 @@ def main():
 							[str(x) for x in [args.supercontig_name, start, stop, id_cleaned]])))
 					start = stop
 				else:
-					print "\t".join("{}\n".format([str(x) for x in [args.supercontig_name, start, stop, id_cleaned]]))
-					outbed.write(
+					print "\t".join([str(x) for x in [args.supercontig_name, start, stop, id_cleaned]])
+					outbed.write("{}\n".format(
 						"\t".join(
-							[str(x) for x in [id_cleaned, 0, len(seq_record), id_cleaned]]))
+							[str(x) for x in [id_cleaned, 0, len(seq_record), id_cleaned]])))
 					outfasta.write(">{}\n".format(id_cleaned))
 					if wrap is not None:
 						for i in range(0, length, wrap):
