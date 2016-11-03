@@ -85,17 +85,18 @@ def parse_args():
 
 	parser.add_argument(
 		"--size", type=int, default=1000,
-		help="Minimum length for contig/scaffold to be included")
+		help="Minimum length for contig/scaffold to be included. Default = 1000")
 
 	parser.add_argument(
 		"--supercontig_name", default="chrUn",
-		help="The name of the supercontig created from the filtered contigs")
+		help="The name of the supercontig created from the filtered contigs. "
+		"Default is chrUn")
 
 	parser.add_argument(
 		"--wrap_length", default=50,
 		help="Provide either intger length of each line to use "
 		"when writing sequence data or None to prevent wrapping and write "
-		"sequence on a single line")
+		"sequence on a single line. Default = 50.")
 
 	parser.add_argument(
 		"--bioawk", default="bioawk",
