@@ -5,7 +5,8 @@ import sys
 
 def main():
 	""" Main Function """
-	args = parse_args
+	args = parse_args()
+	print args
 
 	if args.wrap_length is not None:
 		wrap = int(args.wrap_length)
