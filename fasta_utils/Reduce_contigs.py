@@ -28,6 +28,10 @@ def main():
 	a = subprocess.call(
 		"""{} -c fastx '{{ if (length($seq) < {} ) print $seq}}' {} > tmp_toosmall_seq.txt""".format(
 			bioawk, args.size, args.fasta), shell=True)
+	# Create a file of just sequence names for too short scaffolds/contigs
+	a = subprocess.call(
+		"""{} -c fastx '{{ if (length($seq) < {} ) print $name}}' {} > tmp_toosmall_name.txt""".format(
+			bioawk, args.size, args.fasta), shell=True)
 	# Concatenate too short sequences
 	with open("tmp_toosmall_seq.txt", "r") as f:
 		sequence = ""
@@ -35,6 +39,11 @@ def main():
 		for line in f:
 			sequence += line
 			lengths.append(len(line))
+	# Collect sequence names
+	with open("tmp_toosmall_name.txt", "r") as f:
+		names = []
+		for line in f:
+			names.append(line)
 	# Write fasta of supercontig
 	length = len(sequence)
 	with open("tmp_supercontig.fa", "w") as f:
@@ -48,9 +57,9 @@ def main():
 	with open(args.output_bed, "w") as f:
 		start = 0
 		stop = 0
-		for i in lengths:
+		for idx, i in lengths:
 			stop += i
-			f.write("{}\t{}\t{}".format(args.supercontig_name, start, stop))
+			f.write("{}\t{}\t{}\t{}".format(args.supercontig_name, start, stop, names[idx]))
 			start = stop
 	# Concatenate fasta of sequences large enough with supercontig fasta
 	a = subprocess.call(
