@@ -88,6 +88,10 @@ def parse_args():
 		"when writing sequence data or None to prevent wrapping and write "
 		"sequence on a single line")
 
+	parser.add_argument(
+		"--bioawk", default="bioawk",
+		help="Path to bioawk.  Default is 'bioawk'")
+
 	args = parser.parse_args()
 
 	return args
