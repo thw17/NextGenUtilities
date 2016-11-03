@@ -1,62 +1,93 @@
 import argparse
-from Bio import SeqIO
-from Bio.Alphabet import generic_dna
-from Bio.Seq import Seq
-from Bio.SeqRecord import SeqRecord
-
+import subprocess
+import sys
 
 def main():
-	""" Main function """
+	""" Main Function """
+	args = parse_args
 
-	args = parse_args()
+	# Check bioawk install
+	bioawk = args.bioawk
+	a = subprocess.call(
+		"{} -c help".format(bioawk), shell=True)
+	# The -c help command returns 1 as an exit code
+	if a != 1:
+		print "Error. Check bioawk installation and path"
+		sys.exit(1)
 
-	# Set up variables for loops
-	counter = 0
-	chrUn = Seq("", generic_dna)
-	start = 0
-	stop = 0
-	if args.wrap_length is not None:
-		wrap = int(args.wrap_length)
-	with open(args.output_fasta, "w") as outfasta, open(args.output_bed, "w") as outbed:
-		for seq_record in SeqIO.parse(args.fasta, "fasta"):
-			try:
-				length = len(seq_record)
-			except TypeError:
-				continue
-			id = seq_record.id
-			id_cleaned = id.replace("\n", " ").replace("\r", " ").replace("  ", " ")
-			if length < 1:
-				continue
-			if length < args.size:
-				chrUn += seq_record
-				stop += length
-				outbed.write("{}\n".format(
-					"\t".join(
-						[str(x) for x in [args.supercontig_name, start, stop, id_cleaned]])))
-				start = stop
-			else:
-				print "{}\n".format("\t".join([str(x) for x in [id_cleaned, 0, len(seq_record), id_cleaned]]))
-				outbed.write("{}\n".format(
-					"\t".join(
-						[str(x) for x in [id_cleaned, 0, len(seq_record), id_cleaned]])))
-				outfasta.write(">{}\n".format(id_cleaned))
-				if wrap is not None:
-					for i in range(0, length, wrap):
-						outfasta.write(str(seq_record.seq[i: i + wrap]) + "\n")
-				else:
-					outfasta.write(seq_record.seq + "\n")
-			counter += 1
-			if counter % 100 == 0:
-				print "{} records processed".format(counter)
-		chrUn_rec = SeqRecord(chrUn)
-		chrUn_rec.id = args.supercontig_name
-		length = len(SeqRecord(chrUn))
-		outfasta.write(">{}\n".format(chrUn_rec.id))
-		if wrap is not None:
-			for i in range(0, length, wrap):
-				outfasta.write(chrUn_rec[i: i + wrap].seq + "\n")
-			else:
-				outfasta.write(chrUn_rec.seq + "\n")
+	# Create temp fasta for large enough contigs/scaffolds
+	a = subprocess.call(
+		"{} -c fastx '{{ if (length($seq) > {} ) print ">"$name; print $seq}}' > tmp_large_enough.fa".format(
+			bioawk, args.size))
+
+
+
+
+
+
+
+
+
+
+# import argparse
+# from Bio import SeqIO
+# from Bio.Alphabet import generic_dna
+# from Bio.Seq import Seq
+# from Bio.SeqRecord import SeqRecord
+#
+#
+# def main():
+# 	""" Main function """
+#
+# 	args = parse_args()
+#
+# 	# Set up variables for loops
+# 	counter = 0
+# 	chrUn = Seq("", generic_dna)
+# 	start = 0
+# 	stop = 0
+# 	if args.wrap_length is not None:
+# 		wrap = int(args.wrap_length)
+# 	with open(args.output_fasta, "w") as outfasta, open(args.output_bed, "w") as outbed:
+# 		for seq_record in SeqIO.parse(args.fasta, "fasta"):
+# 			try:
+# 				length = len(seq_record)
+# 			except TypeError:
+# 				continue
+# 			id = seq_record.id
+# 			id_cleaned = id.replace("\n", " ").replace("\r", " ").replace("  ", " ")
+# 			if length < 1:
+# 				continue
+# 			if length < args.size:
+# 				chrUn += seq_record
+# 				stop += length
+# 				outbed.write("{}\n".format(
+# 					"\t".join(
+# 						[str(x) for x in [args.supercontig_name, start, stop, id_cleaned]])))
+# 				start = stop
+# 			else:
+# 				print "{}\n".format("\t".join([str(x) for x in [id_cleaned, 0, len(seq_record), id_cleaned]]))
+# 				outbed.write("{}\n".format(
+# 					"\t".join(
+# 						[str(x) for x in [id_cleaned, 0, len(seq_record), id_cleaned]])))
+# 				outfasta.write(">{}\n".format(id_cleaned))
+# 				if wrap is not None:
+# 					for i in range(0, length, wrap):
+# 						outfasta.write(str(seq_record.seq[i: i + wrap]) + "\n")
+# 				else:
+# 					outfasta.write(seq_record.seq + "\n")
+# 			counter += 1
+# 			if counter % 100 == 0:
+# 				print "{} records processed".format(counter)
+# 		chrUn_rec = SeqRecord(chrUn)
+# 		chrUn_rec.id = args.supercontig_name
+# 		length = len(SeqRecord(chrUn))
+# 		outfasta.write(">{}\n".format(chrUn_rec.id))
+# 		if wrap is not None:
+# 			for i in range(0, length, wrap):
+# 				outfasta.write(chrUn_rec[i: i + wrap].seq + "\n")
+# 			else:
+# 				outfasta.write(chrUn_rec.seq + "\n")
 
 
 def parse_args():
