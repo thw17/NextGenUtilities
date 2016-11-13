@@ -41,7 +41,7 @@ def main():
 		sequence = ""
 		lengths = []
 		for line in f:
-			sequence += line
+			sequence += line.rstrip()
 			lengths.append(len(line))
 
 	# Collect sequence names
