@@ -44,6 +44,7 @@ def main():
 		for line in f:
 			sequence += line
 			lengths.append(len(line))
+		print lengths
 
 	# Collect sequence names
 	with open("tmp_toosmall_name.txt", "r") as f:
@@ -62,6 +63,7 @@ def main():
 			f.write(sequence + "\n")
 
 	# Write bed containing coordinates of contigs in the supercontig
+	print lengths
 	with open(args.output_bed, "w") as f:
 		start = 0
 		stop = 0
