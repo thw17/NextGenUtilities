@@ -73,7 +73,7 @@ def main():
 	# Ensure large enough fasta sequences are wrapped correctly (as bioawk
 	# doesn't wrap) and in a way consistent with the supercontig record
 	with open("tmp_large_enough.fa", "r") as f:
-		with open("tmp_large_enough.WRAPPED.fa") as o:
+		with open("tmp_large_enough.WRAPPED.fa", "w") as o:
 			# the following text for parsing fasta based on Brent Pedersen's
 			# response here:  https://www.biostars.org/p/710/
 			faiter = (x[1] for x in groupby(f, lambda line: line[0] == ">"))
