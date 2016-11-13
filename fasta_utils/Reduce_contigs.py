@@ -100,7 +100,7 @@ def main():
 
 	# Remove blank lines (in place) from final output file
 	a = subprocess.call(
-		["sed", "-i '/^$/d'", args.output_fasta])
+		["sed", "-i {}".format(repr('/^$/d')), args.output_fasta])
 
 
 def parse_args():
