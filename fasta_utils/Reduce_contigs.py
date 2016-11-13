@@ -98,10 +98,6 @@ def main():
 			["cat", "tmp_large_enough.WRAPPED.fa", "tmp_supercontig.fa"],
 			stdout=f)
 
-	# Remove blank lines (in place) from final output file
-	a = subprocess.call(
-		["sed", "-i {}".format(repr('/^$/d')), args.output_fasta])
-
 
 def parse_args():
 	""" Parse command line arguments """
@@ -143,22 +139,6 @@ def parse_args():
 
 	return args
 
-def fasta_iter(fasta_name):
-    """
-    given a fasta file. yield tuples of header, sequence
-
-	From Brent Pedersen: https://www.biostars.org/p/710/
-    """
-    fh = open(fasta_name)
-    # ditch the boolean (x[0]) and just keep the header or sequence since
-    # we know they alternate.
-    faiter = (x[1] for x in groupby(fh, lambda line: line[0] == ">"))
-    for header in faiter:
-        # drop the ">"
-        header = header.next()[1:].strip()
-        # join all sequence lines to one.
-        seq = "".join(s.strip() for s in faiter.next())
-        yield header, seq
 
 if __name__ == '__main__':
 	main()
