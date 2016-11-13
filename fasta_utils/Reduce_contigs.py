@@ -88,7 +88,7 @@ def main():
 				length = len(seq)
 				if wrap is not None:
 					for i in range(0, length, wrap):
-						o.write(sequence[i: i + wrap] + "\n")
+						o.write(seq[i: i + wrap] + "\n")
 				else:
 					o.write(sequence + "\n")
 
@@ -97,6 +97,10 @@ def main():
 		a = subprocess.call(
 			["cat", "tmp_large_enough.WRAPPED.fa", "tmp_supercontig.fa"],
 			stdout=f)
+
+	# Remove blank lines (in place) from final output file
+	a = subprocess.call(
+		["sed", "-i '/^$/d'", args.output_fasta])
 
 
 def parse_args():
