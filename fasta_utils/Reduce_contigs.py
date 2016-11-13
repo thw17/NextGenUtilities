@@ -26,7 +26,6 @@ def main():
 		"""{} -c fastx '{{ if (length($seq) > {} ) print ">"$name; print $seq}}' {} > tmp_large_enough.fa""".format(
 			bioawk, int(args.size) - 1, args.fasta), shell=True)
 
-
 	# Create a file of just sequence for too short scaffolds/contigs
 	a = subprocess.call(
 		"""{} -c fastx '{{ if (length($seq) < {} ) print $seq}}' {} > tmp_toosmall_seq.txt""".format(
@@ -44,7 +43,6 @@ def main():
 		for line in f:
 			sequence += line
 			lengths.append(len(line))
-		print lengths
 
 	# Collect sequence names
 	with open("tmp_toosmall_name.txt", "r") as f:
@@ -63,11 +61,10 @@ def main():
 			f.write(sequence + "\n")
 
 	# Write bed containing coordinates of contigs in the supercontig
-	print lengths
 	with open(args.output_bed, "w") as f:
 		start = 0
 		stop = 0
-		for idx, i in lengths:
+		for idx, i in enumerate(lengths):
 			stop += i
 			f.write("{}\t{}\t{}\t{}".format(
 				args.supercontig_name, start, stop, names[idx]))
