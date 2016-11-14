@@ -1,3 +1,4 @@
+from __future__ import print_function
 import argparse
 from itertools import groupby
 import subprocess
@@ -7,7 +8,6 @@ import sys
 def main():
 	""" Main Function """
 	args = parse_args()
-	print args
 
 	if args.wrap_length is not None:
 		wrap = int(args.wrap_length)
@@ -18,7 +18,7 @@ def main():
 		"{} -c help".format(bioawk), shell=True)
 	# The -c help command returns 1 as an exit code
 	if a != 1:
-		print "Error. Check bioawk installation and path"
+		print("Error. Check bioawk installation and path")
 		sys.exit(1)
 
 	# Create temp fasta for large enough contigs/scaffolds
