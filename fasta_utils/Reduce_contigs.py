@@ -21,20 +21,30 @@ def main():
 		print("Error. Check bioawk installation and path")
 		sys.exit(1)
 
-	# Create temp fasta for large enough contigs/scaffolds
-	a = subprocess.call(
-		"""{} -c fastx '{{ if (length($seq) > {} ) print ">"$name; print $seq}}' {} > tmp_large_enough.fa""".format(
-			bioawk, int(args.size) - 1, args.fasta), shell=True)
+	if args.mode == "LENGTH":
+		# Create temp fasta for large enough contigs/scaffolds
+		a = subprocess.call(
+			"""{} -c fastx '{{ if (length($seq) > {} ) print ">"$name; print $seq}}' {} > tmp_large_enough.fa""".format(
+				bioawk, int(args.size) - 1, args.fasta), shell=True)
 
-	# Create a file of just sequence for too short scaffolds/contigs
-	a = subprocess.call(
-		"""{} -c fastx '{{ if (length($seq) < {} ) print $seq}}' {} > tmp_toosmall_seq.txt""".format(
-			bioawk, args.size, args.fasta), shell=True)
+		# Create a file of just sequence for too short scaffolds/contigs
+		a = subprocess.call(
+			"""{} -c fastx '{{ if (length($seq) < {} ) print $seq}}' {} > tmp_toosmall_seq.txt""".format(
+				bioawk, args.size, args.fasta), shell=True)
 
-	# Create a file of just sequence names for too short scaffolds/contigs
-	a = subprocess.call(
-		"""{} -c fastx '{{ if (length($seq) < {} ) print $name}}' {} > tmp_toosmall_name.txt""".format(
-			bioawk, args.size, args.fasta), shell=True)
+		# Create a file of just sequence names for too short scaffolds/contigs
+		a = subprocess.call(
+			"""{} -c fastx '{{ if (length($seq) < {} ) print $name}}' {} > tmp_toosmall_name.txt""".format(
+				bioawk, args.size, args.fasta), shell=True)
+
+	elif args.mode == "ID":
+		# Code to read id text file
+
+		# base code on this kind of a line (this example prints yes if a sequence name is either chr1 or chr4):
+		# bioawk -c fastx '{split("chr1 chr4",a, " "); for (i in a) value[a[i]]; if ($name in value == 1) print "Yes" }' test.fa
+
+	else:
+		print("")
 
 	# Concatenate too short sequences
 	with open("tmp_toosmall_seq.txt", "r") as f:
@@ -109,12 +119,24 @@ def parse_args():
 		help="Fasta reference file to be processed")
 
 	parser.add_argument(
+		"--mode", required=True, choices=["LENGTH", "ID"],
+		help="Mode to determine which contigs to leave intact, and which to "
+		"combine. Two options: LENGTH and ID.  LENGTH will filter by contig "
+		"length (via --size flag). ID will leave intact contigs with IDs "
+		"included in a .txt file (via --ids flag)")
+
+	parser.add_argument(
 		"--output_fasta", required=True,
 		help="Output file to write new reference")
 
 	parser.add_argument(
 		"--output_bed", required=True,
 		help="Output bed file for annotations of new fasta")
+
+	parser.add_argument(
+		"--ids", default=None,
+		help="Text file listing contig ids to leave as-is in a single column, one "
+		"per row.  All other contig ids will be combined into the supercontig.")
 
 	parser.add_argument(
 		"--size", type=int, default=1000,
