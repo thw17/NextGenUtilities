@@ -50,6 +50,9 @@ def main():
 		a = subprocess.call(
 			"""{} -c fastx '{{split("{}", a, " "); for (i in a) value[a[i]]; if ($name in value == 1) print ">"$name; print $seq}} {} > tmp_pass.fa""".format(
 				bioawk, " ".join(id_list), args.fasta), shell=True)
+		print(
+			"""{} -c fastx '{{split("{}", a, " "); for (i in a) value[a[i]]; if ($name in value == 1) print ">"$name; print $seq}} {} > tmp_pass.fa""".format(
+			bioawk, " ".join(id_list), args.fasta), shell=True))
 
 		# Create a file of just sequence for too short scaffolds/contigs
 		a = subprocess.call(
