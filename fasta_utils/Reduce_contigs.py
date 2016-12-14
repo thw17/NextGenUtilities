@@ -51,7 +51,7 @@ def main():
 			"""{} -c fastx '{{split("{}", a, " "); for (i in a) value[a[i]]; if ($name in value == 1) print ">"$name"\n"$seq}}' {} > tmp_pass.fa""".format(
 				bioawk, " ".join(id_list), args.fasta), shell=True)
 		print(
-			"""{} -c fastx '{{split("{}", a, " "); for (i in a) value[a[i]]; if ($name in value == 1) print ">"$name"\nprint $seq}}' {} > tmp_pass.fa""".format(
+			"""{} -c fastx '{{split("{}", a, " "); for (i in a) value[a[i]]; if ($name in value == 1) print ">"$name"\n"print $seq}}' {} > tmp_pass.fa""".format(
 			bioawk, " ".join(id_list), args.fasta))
 
 		# Create a file of just sequence for too short scaffolds/contigs
