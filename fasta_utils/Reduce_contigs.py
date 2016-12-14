@@ -24,30 +24,49 @@ def main():
 	if args.mode == "LENGTH":
 		# Create temp fasta for large enough contigs/scaffolds
 		a = subprocess.call(
-			"""{} -c fastx '{{ if (length($seq) > {} ) print ">"$name; print $seq}}' {} > tmp_large_enough.fa""".format(
+			"""{} -c fastx '{{ if (length($seq) > {} ) print ">"$name; print $seq}}' {} > tmp_pass.fa""".format(
 				bioawk, int(args.size) - 1, args.fasta), shell=True)
 
 		# Create a file of just sequence for too short scaffolds/contigs
 		a = subprocess.call(
-			"""{} -c fastx '{{ if (length($seq) < {} ) print $seq}}' {} > tmp_toosmall_seq.txt""".format(
+			"""{} -c fastx '{{ if (length($seq) < {} ) print $seq}}' {} > tmp_toconcat_seq.txt""".format(
 				bioawk, args.size, args.fasta), shell=True)
 
 		# Create a file of just sequence names for too short scaffolds/contigs
 		a = subprocess.call(
-			"""{} -c fastx '{{ if (length($seq) < {} ) print $name}}' {} > tmp_toosmall_name.txt""".format(
+			"""{} -c fastx '{{ if (length($seq) < {} ) print $name}}' {} > tmp_toconcat_name.txt""".format(
 				bioawk, args.size, args.fasta), shell=True)
 
 	elif args.mode == "ID":
 		# Code to read id text file
-
+		with open(args.ids, "r") as f:
+			id_list = [x.strip() for x in f]
+			while "" in id_list:
+				id_list.remove("")
 		# base code on this kind of a line (this example prints yes if a sequence name is either chr1 or chr4):
 		# bioawk -c fastx '{split("chr1 chr4",a, " "); for (i in a) value[a[i]]; if ($name in value == 1) print "Yes" }' test.fa
 
+		# Create temp fasta for large enough contigs/scaffolds
+		a = subprocess.call(
+			"""{} -c fastx '{{split("{}", a, " "); for (i in a) value[a[i]]; if ($name in value == 1) print ">"$name; print $seq}} {} > tmp_pass.fa""".format(
+				bioawk, " ".join(id_list), args.fasta), shell=True)
+
+		# Create a file of just sequence for too short scaffolds/contigs
+		a = subprocess.call(
+			"""{} -c fastx '{{split("{}", a, " "); for (i in a) value[a[i]]; if ($name in value == 0) print $seq}} {} > tmp_toconcat_seq.txt""".format(
+				bioawk, " ".join(id_list), args.fasta), shell=True)
+
+		# Create a file of just sequence names for too short scaffolds/contigs
+		a = subprocess.call(
+			"""{} -c fastx '{{split("{}", a, " "); for (i in a) value[a[i]]; if ($name in value == 0) print $name}} {} > tmp_toconcat_name.txt""".format(
+				bioawk, " ".join(id_list), args.fasta), shell=True)
+
 	else:
-		print("")
+		print("Please set --mode to either ID or LENGTH")
+		sys.exit(1)
 
 	# Concatenate too short sequences
-	with open("tmp_toosmall_seq.txt", "r") as f:
+	with open("tmp_toconcat_seq.txt", "r") as f:
 		sequence = ""
 		lengths = []
 		for line in f:
@@ -55,7 +74,7 @@ def main():
 			lengths.append(len(line))
 
 	# Collect sequence names
-	with open("tmp_toosmall_name.txt", "r") as f:
+	with open("tmp_toconcat_name.txt", "r") as f:
 		names = []
 		for line in f:
 			names.append(line)
@@ -82,8 +101,8 @@ def main():
 
 	# Ensure large enough fasta sequences are wrapped correctly (as bioawk
 	# doesn't wrap) and in a way consistent with the supercontig record
-	with open("tmp_large_enough.fa", "r") as f:
-		with open("tmp_large_enough.WRAPPED.fa", "w") as o:
+	with open("tmp_pass.fa", "r") as f:
+		with open("tmp_pass.WRAPPED.fa", "w") as o:
 			# the following text for parsing fasta based on Brent Pedersen's
 			# response here:  https://www.biostars.org/p/710/
 			faiter = (x[1] for x in groupby(f, lambda line: line[0] == ">"))
@@ -105,7 +124,7 @@ def main():
 	# Concatenate fasta of sequences large enough with supercontig fasta
 	with open(args.output_fasta, "w") as f:
 		a = subprocess.call(
-			["cat", "tmp_large_enough.WRAPPED.fa", "tmp_supercontig.fa"],
+			["cat", "tmp_pass.WRAPPED.fa", "tmp_supercontig.fa"],
 			stdout=f)
 
 
