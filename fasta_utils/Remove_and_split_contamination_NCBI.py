@@ -1,3 +1,23 @@
+"""
+Remove_and_split_contamination_NCBI.py
+
+Author: Tim Webster, Arizona State University
+Date: April 11, 2017
+
+This script takes as input a fasta file and a contamination file from NCBI. The
+latter contains coordinates (1-based indexing) of contamination in the former.
+This script will run through the fasta file and if a sequence does not contain
+any contamination, then the script will simply print the sequence with a fasta
+id. However, if a sequence does contain contamination, the script will remove
+the contaminated sequence and split the fasta sequence at those locations.  For
+example, a sequence with contamination from position 27-44 would be split into
+two sequences: beginning to 27, and 44 until the end.
+
+The script also has the option to strip repeated elements at the beginning of
+fasta ids (e.g., strip "DNA|" from ">DNA|scaffold1", ">DNA|scaffold2", and so
+on).  It also allows wrapping of fasta sequences at arbitrary lengths.
+"""
+
 from __future__ import print_function
 import argparse
 import csv
