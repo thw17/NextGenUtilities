@@ -122,7 +122,7 @@ def main():
 					for i in range(0, length, wrap):
 						o.write(seq[i: i + wrap] + "\n")
 				else:
-					o.write(sequence + "\n")
+					o.write(seq + "\n")
 
 	# Concatenate fasta of sequences large enough with supercontig fasta
 	with open(args.output_fasta, "w") as f:

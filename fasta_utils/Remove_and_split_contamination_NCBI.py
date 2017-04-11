@@ -2,6 +2,7 @@ from __future__ import print_function
 import argparse
 import csv
 from itertools import groupby
+import re
 import subprocess
 import sys
 
@@ -13,43 +14,148 @@ def main():
 	if args.wrap_length is not None:
 		wrap = int(args.wrap_length)
 
-	# Check bioawk install
-	bioawk = args.bioawk
-	a = subprocess.call(
-		"{} -c help".format(bioawk), shell=True)
-	# The -c help command returns 1 as an exit code
-	if a != 1:
-		print("Error. Check bioawk installation and path")
-		sys.exit(1)
-
 	# Read NCBI contamination file
 	# Assumes four columns looking something like:
 	# scaffold1000	594793	294651..294688	adaptor:NGB00843.1
 	# where the third column (e.g., 294651..294688) contains the one-based index
-	# start and end position of the problem sequence to be removed
+	# start and end position of the problem sequence to be removed, and commas
+	# without spaces separate pairs of positions if more than one exist
+	# (e.g., 294651..294688,300002..300036)
 	cont_coords = {}
 	with open(args.ncbi_tab, "r") as f:
 		for line in csv.reader(f, delimiter="\t"):
-			line2 = line.rstrip()
+			line2 = [x.rstrip() for x in line]
 			if line2 != "":
-				if "," in line2[2]:
-					
+				regex_pattern = '|'.join(map(re.escape, args.delimiters))
+				coords = re.split(regex_pattern, line2[2])
+				coords = [int(x) for x in coords]
+				cont_coords[line2[0]] = coords
+
+	# Process fasta
+	f_strip = len(args.fasta_id_junk) + 1
+	with open(args.fasta, "r") as f:
+		with open(args.output_fasta, "w") as o:
+			# the following text for parsing fasta based on Brent Pedersen's
+			# response here:  https://www.biostars.org/p/710/
+			faiter = (x[1] for x in groupby(f, lambda line: line[0] == ">"))
+			for header in faiter:
+				# drop the ">" and other junk
+				header = header.next()[f_strip:].strip()
+				header_split = header.split(" ")
+				header_id = header_split[0]
+				# join all sequence lines to one.
+				seq = "".join(s.strip() for s in faiter.next())
+
+				if header_id in cont_coords:
+					suffix = 0
+					temp_coord_list = cont_coords[header_id]
+					# if len(temp_coord_list) > 2:
+					for idx, co in enumerate(temp_coord_list[:-1]):
+						if idx == 0:
+							suffix += 1
+							o.write(">{}\n".format(header_id + "_{}".format(suffix)))
+							seq_1 = seq[0:co]
+							length = len(seq_1)
+							if wrap is not None:
+								for i in range(0, length, wrap):
+									o.write(seq_1[i: i + wrap] + "\n")
+							else:
+								o.write(seq_1 + "\n")
+						elif idx % 2 != 0:
+							suffix += 1
+							o.write(">{}\n".format(header_id + "_{}".format(suffix)))
+							seq_1 = seq[co: temp_coord_list[idx + 1]]
+							length = len(seq_1)
+							if wrap is not None:
+								for i in range(0, length, wrap):
+									o.write(seq_1[i: i + wrap] + "\n")
+							else:
+								o.write(seq_1 + "\n")
+					# Note this else is associated with the for above NOT the if/elif
+					else:
+						suffix += 1
+						o.write(">{}\n".format(header_id + "_{}".format(suffix)))
+						seq_1 = seq[temp_coord_list[-1]:]
+						length = len(seq_1)
+						if wrap is not None:
+							for i in range(0, length, wrap):
+								o.write(seq_1[i: i + wrap] + "\n")
+						else:
+							o.write(seq_1 + "\n")
+					# if only two items in list - start and end coordinates of contamination
+					# else:
+					# 	# First half
+					# 	suffix += 1
+					# 	o.write(">{}\n".format(header_id + "_{}".format(suffix)))
+					# 	seq_1 = seq[0: temp_coord_list[0]]
+					# 	length = len(seq_1)
+					# 	if wrap is not None:
+					# 		for i in range(0, length, wrap):
+					# 			o.write(seq_1[i: i + wrap] + "\n")
+					# 	else:
+					# 		o.write(seq_1 + "\n")
+					# 	# Second half
+					# 	suffix += 1
+					# 	o.write(">{}\n".format(header_id + "_{}".format(suffix)))
+					# 	seq_1 = seq[temp_coord_list[1] - 1:]
+					# 	length = len(seq_1)
+					# 	if wrap is not None:
+					# 		for i in range(0, length, wrap):
+					# 			o.write(seq_1[i: i + wrap] + "\n")
+					# 	else:
+					# 		o.write(seq_1 + "\n")
+
+					# suffix = 1
+					# l_index = 0
+					# o.write(">{}\n".format(header_id + "_{}".format(suffix)))
+					# seq_1 = seq[0:cont_coords[header_id][l_index]]
+					# length = len(seq_1)
+					# if wrap is not None:
+					# 	for i in range(0, length, wrap):
+					# 		o.write(seq_1[i: i + wrap] + "\n")
+					# else:
+					# 	o.write(seq_1 + "\n")
+					#
+					# for co in cont_coords[header_id][1:-1]:
+					# 	suffix += 1
+					# 	o.write(">{}\n".format(header_id + "_{}".format(suffix)))
+					# 	seq_1 = seq[
+					# 		cont_coords[header_id][l_index] - 1: cont_coords[header_id][l_index + 1]]
+					# 	length = len(seq_1)
+					# 	if wrap is not None:
+					# 		for i in range(0, length, wrap):
+					# 			o.write(seq_1[i: i + wrap] + "\n")
+					# 	else:
+					# 		o.write(seq_1 + "\n")
+					# 	l_index += 1
+					# else:
+					# 	suffix += 1
+					# 	o.write(">{}\n".format(header_id + "_{}".format(suffix)))
+					# 	seq_1 = seq[cont_coords[header_id][l_index] - 1:]
+					# 	length = len(seq_1)
+					# 	if wrap is not None:
+					# 		for i in range(0, length, wrap):
+					# 			o.write(seq_1[i: i + wrap] + "\n")
+					# 	else:
+					# 		o.write(seq_1 + "\n")
+
 				else:
-					coords = line2[2].split("..")
-					start = coords[0] - 1
-					stop = coords[1]
-					cont_coords[coords[0]] = [start, stop]
-
-	# Read through fasta, find scaffolds wild
-
-
-
+					o.write(">{}\n".format(header_id))
+					length = len(seq)
+					if wrap is not None:
+						for i in range(0, length, wrap):
+							o.write(seq[i: i + wrap] + "\n")
+					else:
+						o.write(seq + "\n")
 
 
 def parse_args():
 	""" Parse command line arguments """
 	parser = argparse.ArgumentParser(
-		description="Concatenates all contigs smaller than a given length")
+		description="This program takes information about fasta contamination "
+		"from NCBI output and splits problem contigs in a fasta file, excluding "
+		"the contaminated regions.  Unaffected scaffolds/contigs are left "
+		"unchanged.")
 
 	parser.add_argument(
 		"--fasta", required=True,
@@ -73,8 +179,17 @@ def parse_args():
 		"sequence on a single line. Default = 50.")
 
 	parser.add_argument(
-		"--bioawk", default="bioawk",
-		help="Path to bioawk.  Default is 'bioawk'")
+		"--delimiters", nargs="*", default=["..", ","],
+		help="The delimiters in the coordinate column of the NCBI contamination "
+		"file.  Default are '..' and ','")
+
+	parser.add_argument(
+		"--fasta_id_junk", type=str, default="",
+		help="Any junk sequence before the scaffold id on the fasta id lines, "
+		"not including the '>'.  For example, if your fasta ids all look like "
+		"'>lcl|scaffold1 Organism_name', where 'scaffold1' is the scaffold id, "
+		"then you would include '--fasta_id_junk lcl|'.  This flag works by string "
+		"length, not pattern matching.")
 
 	args = parser.parse_args()
 
