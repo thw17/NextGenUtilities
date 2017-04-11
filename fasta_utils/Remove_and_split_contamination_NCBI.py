@@ -3,8 +3,6 @@ import argparse
 import csv
 from itertools import groupby
 import re
-import subprocess
-import sys
 
 
 def main():
@@ -82,62 +80,6 @@ def main():
 								o.write(seq_1[i: i + wrap] + "\n")
 						else:
 							o.write(seq_1 + "\n")
-					# if only two items in list - start and end coordinates of contamination
-					# else:
-					# 	# First half
-					# 	suffix += 1
-					# 	o.write(">{}\n".format(header_id + "_{}".format(suffix)))
-					# 	seq_1 = seq[0: temp_coord_list[0]]
-					# 	length = len(seq_1)
-					# 	if wrap is not None:
-					# 		for i in range(0, length, wrap):
-					# 			o.write(seq_1[i: i + wrap] + "\n")
-					# 	else:
-					# 		o.write(seq_1 + "\n")
-					# 	# Second half
-					# 	suffix += 1
-					# 	o.write(">{}\n".format(header_id + "_{}".format(suffix)))
-					# 	seq_1 = seq[temp_coord_list[1] - 1:]
-					# 	length = len(seq_1)
-					# 	if wrap is not None:
-					# 		for i in range(0, length, wrap):
-					# 			o.write(seq_1[i: i + wrap] + "\n")
-					# 	else:
-					# 		o.write(seq_1 + "\n")
-
-					# suffix = 1
-					# l_index = 0
-					# o.write(">{}\n".format(header_id + "_{}".format(suffix)))
-					# seq_1 = seq[0:cont_coords[header_id][l_index]]
-					# length = len(seq_1)
-					# if wrap is not None:
-					# 	for i in range(0, length, wrap):
-					# 		o.write(seq_1[i: i + wrap] + "\n")
-					# else:
-					# 	o.write(seq_1 + "\n")
-					#
-					# for co in cont_coords[header_id][1:-1]:
-					# 	suffix += 1
-					# 	o.write(">{}\n".format(header_id + "_{}".format(suffix)))
-					# 	seq_1 = seq[
-					# 		cont_coords[header_id][l_index] - 1: cont_coords[header_id][l_index + 1]]
-					# 	length = len(seq_1)
-					# 	if wrap is not None:
-					# 		for i in range(0, length, wrap):
-					# 			o.write(seq_1[i: i + wrap] + "\n")
-					# 	else:
-					# 		o.write(seq_1 + "\n")
-					# 	l_index += 1
-					# else:
-					# 	suffix += 1
-					# 	o.write(">{}\n".format(header_id + "_{}".format(suffix)))
-					# 	seq_1 = seq[cont_coords[header_id][l_index] - 1:]
-					# 	length = len(seq_1)
-					# 	if wrap is not None:
-					# 		for i in range(0, length, wrap):
-					# 			o.write(seq_1[i: i + wrap] + "\n")
-					# 	else:
-					# 		o.write(seq_1 + "\n")
 
 				else:
 					o.write(">{}\n".format(header_id))
