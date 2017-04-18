@@ -9,8 +9,10 @@ def main():
 	""" Main Function """
 	args = parse_args()
 
-	if args.wrap_length is not None:
+	if args.wrap_length != "None":
 		wrap = int(args.wrap_length)
+	else:
+		wrap = None
 
 	# Check bioawk install
 	bioawk = args.bioawk

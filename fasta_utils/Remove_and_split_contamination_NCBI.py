@@ -4,6 +4,8 @@ Remove_and_split_contamination_NCBI.py
 Author: Tim Webster, Arizona State University
 Date: April 11, 2017
 
+Currently requires Python 2.7
+
 This script takes as input a fasta file and a contamination file from NCBI. The
 latter contains coordinates (1-based indexing) of contamination in the former.
 This script will run through the fasta file and if a sequence does not contain
@@ -29,8 +31,10 @@ def main():
 	""" Main Function """
 	args = parse_args()
 
-	if args.wrap_length is not None:
+	if args.wrap_length != "None":
 		wrap = int(args.wrap_length)
+	else:
+		wrap = None
 
 	# Read NCBI contamination file
 	# Assumes four columns looking something like:
