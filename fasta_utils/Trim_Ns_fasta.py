@@ -375,6 +375,8 @@ def trim_sequence(
 		else:
 			if b_seen > 0:
 				trimmed_sequence = input_sequence[b_seen:]
+			else:
+				trimmed_sequence = input_sequence
 			n_count = 0
 			for base in trimmed_sequence:
 				if base == "N" or base == "n":
