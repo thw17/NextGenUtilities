@@ -114,10 +114,15 @@ def main():
 									new_len, (new_n * 100) / float(new_len)))
 						else:
 							o_filt.write("{}\n".format(header_id))
-							print(
-								"{}\tLength {}\tPercent_N {}\tFiltered_length {}\tFiltered_percent_N {}\tFAIL".format(
-									header_id, orig_len, (orig_n * 100) / float(orig_len),
-									new_len, (new_n * 100) / float(new_len)))
+							if new_len > 0:
+								print(
+									"{}\tLength {}\tPercent_N {}\tFiltered_length {}\tFiltered_percent_N {}\tFAIL".format(
+										header_id, orig_len, (orig_n * 100) / float(orig_len),
+										new_len, (new_n * 100) / float(new_len)))
+							else:
+								print(
+									"{}\tLength {}\tPercent_N {}\tFiltered_length 0\tFiltered_percent_N 0\tFAIL".format(
+										header_id, orig_len, (orig_n * 100) / float(orig_len)))
 					else:
 						print(
 							"{}\tLength {}\tPercent_N {}\tFiltered_length 0\tFiltered_percent_N 0\tFAIL".format(
@@ -377,7 +382,7 @@ def trim_sequence(
 					try:
 						base = trimmed_sequence[b_index]
 					except IndexError:
-						return None
+						return trimmed_sequence
 					if base == "N" or base == "n":
 						break
 					else:
@@ -407,7 +412,7 @@ def trim_sequence(
 			try:
 				base = input_sequence[b_seen]
 			except IndexError:
-				return None
+				return trimmed_sequence
 			if base == "N" or base == "n":
 				break
 			else:
@@ -452,7 +457,7 @@ def trim_sequence(
 				try:
 					base = trimmed_sequence[b_index]
 				except IndexError:
-					return None
+					return trimmed_sequence
 				if base == "N" or base == "n":
 					break
 				else:
@@ -503,7 +508,7 @@ def trim_sequence(
 				try:
 					base = trimmed_sequence[b_index]
 				except IndexError:
-					return None
+					return trimmed_sequence
 				if base == "N" or base == "n":
 					break
 				else:
