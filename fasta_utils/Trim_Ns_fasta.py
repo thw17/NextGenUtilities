@@ -79,27 +79,50 @@ def main():
 	# Process fasta
 	with open(args.fasta, "r") as f:
 		with open(args.output_fasta, "w") as o:
-			# the following text for parsing fasta based on Brent Pedersen's
-			# response here:  https://www.biostars.org/p/710/
-			faiter = (x[1] for x in groupby(f, lambda line: line[0] == ">"))
-			for header in faiter:
-				# drop the ">"
-				header_id = header.next()[1:].strip()
-				# join all sequence lines to one.
-				seq = "".join(s.strip() for s in faiter.next())
-				# trim sequence
-				new_seq = trim_sequence(
-					seq, lead_hard_buffer, tail_hard_buffer,lead_soft_buffer,
-					tail_soft_buffer, lead_min_n, tail_min_n)
+			with open(args.filtered_scaffolds, "w") as o_filt:
+				# the following text for parsing fasta based on Brent Pedersen's
+				# response here:  https://www.biostars.org/p/710/
+				faiter = (x[1] for x in groupby(f, lambda line: line[0] == ">"))
+				for header in faiter:
+					# drop the ">"
+					header_id = header.next()[1:].strip()
+					# join all sequence lines to one.
+					seq = "".join(s.strip() for s in faiter.next())
+					orig_len = len(seq)
+					orig_n = count_n(seq)
+					# trim sequence
+					new_seq = trim_sequence(
+						seq, lead_hard_buffer, tail_hard_buffer, lead_soft_buffer,
+						tail_soft_buffer, lead_min_n, tail_min_n)
+					if new_seq is not None:
+						new_len = len(new_seq)
+						if new_len >= args.minimum_length:
+							new_n = count_n(new_seq)
 
-				# Write fasta record
-				o.write(">{}\n".format(header_id))
-				length = len(new_seq)
-				if wrap is not None:
-					for i in range(0, length, wrap):
-						o.write(new_seq[i: i + wrap] + "\n")
-				else:
-					o.write(new_seq + "\n")
+							# Write fasta record
+							o.write(">{}\n".format(header_id))
+							length = len(new_seq)
+							if wrap is not None:
+								for i in range(0, length, wrap):
+									o.write(new_seq[i: i + wrap] + "\n")
+							else:
+								o.write(new_seq + "\n")
+
+							print(
+								"{}\tLength {}\tPercent_N {}\tFiltered_length {}\tFiltered_percent_N {}\tPASS".format(
+									header_id, orig_len, (orig_n * 100) / float(orig_len),
+									new_len, (new_n * 100) / float(new_len)))
+						else:
+							o_filt.write("{}\n".format(header_id))
+							print(
+								"{}\tLength {}\tPercent_N {}\tFiltered_length {}\tFiltered_percent_N {}\tFAIL".format(
+									header_id, orig_len, (orig_n * 100) / float(orig_len),
+									new_len, (new_n * 100) / float(new_len)))
+					else:
+						print(
+							"{}\tLength {}\tPercent_N {}\tFiltered_length 0\tFiltered_percent_N 0\tFAIL".format(
+								header_id, orig_len, (orig_n * 100) / float(orig_len)))
+						o_filt.write("{}\n".format(header_id))
 
 
 def parse_args():
@@ -117,6 +140,12 @@ def parse_args():
 	parser.add_argument(
 		"--output_fasta", required=True,
 		help="Output file to write new reference")
+
+	parser.add_argument(
+		"--filtered_scaffolds", default="removed_scaffolds.txt",
+		help="Output file to write names of scaffolds that were removed during "
+		"filtering. Default is 'removed_scaffolds.txt'.  Will overwrite file if "
+		"already exists.")
 
 	parser.add_argument(
 		"--wrap_length", default=50,
@@ -186,6 +215,11 @@ def parse_args():
 		"This count starts AFTER buffers are applied.  Trimming Ns starts from "
 		"the beginning of a sequence first and then moves to the end. Values of "
 		"0 and 1 are treated equivalently (trim even if only a single N present)")
+
+	parser.add_argument(
+		"--minimum_length", default=1, type=int,
+		help="Minimum length of a sequence, after filtering, to include it in "
+		"output file.  Default is 1.")
 
 	args = parser.parse_args()
 
@@ -299,73 +333,81 @@ def trim_sequence(
 
 	Output
 	------
-	trimmed_sequence : The processed sequence output as a string
+	trimmed_sequence : The processed sequence output as a string if buffers not
+		longer than available sequence
+	None : If buffers are longer than available sequence
 
-	Notes
-	-----
-	buffer_set and min_n_set, despite being a bit cumbersome to enter, exist
-	simply to speed up computation.
 	"""
 	if l_hard_buffer > 0:
-		print("leading hard buffer = {}".format(l_hard_buffer))
-		# Handle beginning of sequence
-		trimmed_sequence = input_sequence[l_hard_buffer:]
-		n_count = 0
-		for base in trimmed_sequence:
-			if base == "N" or base == "n":
-				n_count += 1
-			else:
-				break
-		if n_count >= l_min_n:
-			trimmed_sequence = trimmed_sequence[n_count:]
-		# Handle end of sequence
-		if t_hard_buffer > 0:
-			t_hard_buffer = t_hard_buffer * -1
-			trimmed_sequence = trimmed_sequence[:t_hard_buffer]
+		if len(input_sequence) <= l_hard_buffer:
+			return None
+		else:
+			# Handle beginning of sequence
+			trimmed_sequence = input_sequence[l_hard_buffer:]
 			n_count = 0
-			for base in trimmed_sequence[::-1]:
+			for base in trimmed_sequence:
 				if base == "N" or base == "n":
 					n_count += 1
 				else:
 					break
-			if n_count >= t_min_n:
-				n_count = n_count * -1
-				return trimmed_sequence[:n_count]
-			else:
-				return trimmed_sequence
-		elif t_soft_buffer > 0:
-			b_seen = 0
-			while b_seen < t_soft_buffer:
-				b_index = -1 * (b_seen + 1)
-				base = trimmed_sequence[b_index]
-				if base == "N" or base == "n":
-					break
+			if n_count >= l_min_n:
+				trimmed_sequence = trimmed_sequence[n_count:]
+			# Handle end of sequence
+			if t_hard_buffer > 0:
+				if len(trimmed_sequence) <= t_hard_buffer:
+					return None
 				else:
-					b_seen += 1
-			if b_seen == t_soft_buffer:
-				return trimmed_sequence
-			else:
-				if b_seen > 0:
-					trimmed_sequence = trimmed_sequence[:b_index]
-				n_count = 0
-				for base in trimmed_sequence[::-1]:
-					if base == "N" or base == "n":
-						n_count += 1
+					t_hard_buffer = t_hard_buffer * -1
+					trimmed_sequence = trimmed_sequence[:t_hard_buffer]
+					n_count = 0
+					for base in trimmed_sequence[::-1]:
+						if base == "N" or base == "n":
+							n_count += 1
+						else:
+							break
+					if n_count >= t_min_n:
+						n_count = n_count * -1
+						return trimmed_sequence[:n_count]
 					else:
+						return trimmed_sequence
+			elif t_soft_buffer > 0:
+				b_seen = 0
+				while b_seen < t_soft_buffer:
+					b_index = -1 * (b_seen + 1)
+					try:
+						base = trimmed_sequence[b_index]
+					except IndexError:
+						return None
+					if base == "N" or base == "n":
 						break
-				if n_count >= t_min_n:
-					n_count = n_count * -1
-					return trimmed_sequence[:n_count]
-				else:
+					else:
+						b_seen += 1
+				if b_seen == t_soft_buffer:
 					return trimmed_sequence
-		else:
-			return trimmed_sequence
+				else:
+					if b_seen > 0:
+						trimmed_sequence = trimmed_sequence[:b_index]
+					n_count = 0
+					for base in trimmed_sequence[::-1]:
+						if base == "N" or base == "n":
+							n_count += 1
+						else:
+							break
+					if n_count >= t_min_n:
+						n_count = n_count * -1
+						return trimmed_sequence[:n_count]
+					else:
+						return trimmed_sequence
+			else:
+				return trimmed_sequence
 	elif l_soft_buffer > 0:
-		print("leading soft buffer = {}".format(l_soft_buffer))
 		# Handle beginning of a sequence
 		b_seen = 0
 		while b_seen < l_soft_buffer:
-			base = input_sequence[b_seen]
+			try:
+				base = input_sequence[b_seen]
+			except IndexError:
+				return None
 			if base == "N" or base == "n":
 				break
 			else:
@@ -387,24 +429,30 @@ def trim_sequence(
 				trimmed_sequence = trimmed_sequence[n_count:]
 		# Handle end of sequence
 		if t_hard_buffer > 0:
-			t_hard_buffer = t_hard_buffer * -1
-			trimmed_sequence = trimmed_sequence[:t_hard_buffer]
-			n_count = 0
-			for base in trimmed_sequence[::-1]:
-				if base == "N" or base == "n":
-					n_count += 1
-				else:
-					break
-			if n_count >= t_min_n:
-				n_count = n_count * -1
-				return trimmed_sequence[:n_count]
+			if len(trimmed_sequence) <= t_hard_buffer:
+				return None
 			else:
-				return trimmed_sequence
+				t_hard_buffer = t_hard_buffer * -1
+				trimmed_sequence = trimmed_sequence[:t_hard_buffer]
+				n_count = 0
+				for base in trimmed_sequence[::-1]:
+					if base == "N" or base == "n":
+						n_count += 1
+					else:
+						break
+				if n_count >= t_min_n:
+					n_count = n_count * -1
+					return trimmed_sequence[:n_count]
+				else:
+					return trimmed_sequence
 		elif t_soft_buffer > 0:
 			b_seen = 0
 			while b_seen < t_soft_buffer:
 				b_index = -1 * (b_seen + 1)
-				base = trimmed_sequence[b_index]
+				try:
+					base = trimmed_sequence[b_index]
+				except IndexError:
+					return None
 				if base == "N" or base == "n":
 					break
 				else:
@@ -429,28 +477,33 @@ def trim_sequence(
 			return trimmed_sequence
 
 	else:
-		print("no leading buffer")
 		# No leading buffer, head directly to trailing buffers
 		trimmed_sequence = input_sequence
 		if t_hard_buffer > 0:
-			t_hard_buffer = t_hard_buffer * -1
-			trimmed_sequence = trimmed_sequence[:t_hard_buffer]
-			n_count = 0
-			for base in trimmed_sequence[::-1]:
-				if base == "N" or base == "n":
-					n_count += 1
-				else:
-					break
-			if n_count >= t_min_n:
-				n_count = n_count * -1
-				return trimmed_sequence[:n_count]
+			if len(trimmed_sequence) <= t_hard_buffer:
+				return None
 			else:
-				return trimmed_sequence
+				t_hard_buffer = t_hard_buffer * -1
+				trimmed_sequence = trimmed_sequence[:t_hard_buffer]
+				n_count = 0
+				for base in trimmed_sequence[::-1]:
+					if base == "N" or base == "n":
+						n_count += 1
+					else:
+						break
+				if n_count >= t_min_n:
+					n_count = n_count * -1
+					return trimmed_sequence[:n_count]
+				else:
+					return trimmed_sequence
 		elif t_soft_buffer > 0:
 			b_seen = 0
 			while b_seen < t_soft_buffer:
 				b_index = -1 * (b_seen + 1)
-				base = trimmed_sequence[b_index]
+				try:
+					base = trimmed_sequence[b_index]
+				except IndexError:
+					return None
 				if base == "N" or base == "n":
 					break
 				else:
@@ -494,6 +547,13 @@ def trim_sequence(
 				return trimmed_sequence[:n_count]
 			else:
 				return trimmed_sequence
+
+
+def count_n(input_sequence):
+	""" Simply counts the occurrence of 'n' and 'N' in a sequence """
+	lower = input_sequence.count("n")
+	upper = input_sequence.count("N")
+	return upper + lower
 
 if __name__ == '__main__':
 	main()
