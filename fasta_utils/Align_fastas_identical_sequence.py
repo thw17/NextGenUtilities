@@ -27,8 +27,10 @@ Alternatively, there is an option to add an identical string as the score
 to every alignment (e.g., 3500).
 
 """
-import argparse
+from __future__ import print_function
 from itertools import groupby
+import argparse
+import time
 
 
 def main():
@@ -41,6 +43,9 @@ def main():
 	alignment_number = 0
 	with open(args.output_prefix + ".axt", "w") as out:
 		with open(args.aligning_fasta, "r") as ao:
+			align_start_time = time.time()
+			last_10_start = align_start_time
+			counter = 0
 			# note: the following code for parsing fastas is largely based on
 			# Brent Pedersen's response here:  https://www.biostars.org/p/710/
 			ao_faiter = (x[1] for x in groupby(ao, lambda line: line[0] == ">"))
@@ -93,6 +98,13 @@ def main():
 								out.write("{}\n".format(ao_seq))
 								out.write("\n")
 								alignment_number += 1
+
+			counter += 1
+			if counter % 10 == 0:
+				last_10_end = time.time()
+				print("{} records processed in {}. Time of last 10 records: {}.".format(
+					counter, args.aligning_fasta, last_10_end - last_10_start))
+				last_10_start = time.time()
 
 
 def parse_args():
