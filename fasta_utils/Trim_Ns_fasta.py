@@ -18,6 +18,7 @@ It also allows for wrapping of fasta sequences at arbitrary lengths.
 from __future__ import print_function
 import argparse
 import csv
+import sys
 from itertools import groupby
 import re
 
@@ -51,10 +52,11 @@ def main():
 		lead_soft_buffer = args.lead_soft_buffer
 		tail_soft_buffer = args.tail_soft_buffer
 
-	if all(
-		[lead_hard_buffer, lead_soft_buffer, tail_hard_buffer,
-			tail_soft_buffer]) == 0:
-				no_buffer = True
+	buffers = [
+		lead_hard_buffer, lead_soft_buffer, tail_hard_buffer, tail_soft_buffer]
+
+	if len([x for x in buffers if x == 0]) == 4:
+		no_buffer = True
 	else:
 		no_buffer = False
 
@@ -71,11 +73,12 @@ def main():
 		else:
 			tail_min_n = 1
 
-	if all([lead_min_n, tail_min_n]) == 0:
+	if lead_min_n == 0 and tail_min_n == 0:
 		no_min_n = True
 	else:
 		no_min_n = False
 
+	print(no_buffer, no_min_n)
 	# Process fasta
 	with open(args.fasta, "r") as f:
 		with open(args.output_fasta, "w") as o:
@@ -229,71 +232,72 @@ def parse_args():
 	args = parser.parse_args()
 
 	# Validate command line flags
-	if any(
-		[args.hard_buffer, args.soft_buffer, args.lead_hard_buffer,
-			args.lead_soft_buffer, args.tail_hard_buffer, args.tail_soft_buffer,
-			args.min_n, args.lead_min_n, args.tail_min_n]) < 0:
+	features = [
+		args.hard_buffer, args.soft_buffer, args.lead_hard_buffer,
+		args.lead_soft_buffer, args.tail_hard_buffer, args.tail_soft_buffer,
+		args.min_n, args.lead_min_n, args.tail_min_n]
+	if len([x for x in features if x < 0]) > 0:
 		sys.exit(
 			"Command line parameters cannot be negative for any buffer or "
 			"min_n flags.")
 
 	if args.hard_buffer > 0:
-		if any(
-			[args.soft_buffer, args.lead_hard_buffer, args.lead_soft_buffer,
-				args.tail_hard_buffer, args.tail_soft_buffer]) > 0:
+		features = [
+			args.soft_buffer, args.lead_hard_buffer, args.lead_soft_buffer,
+			args.tail_hard_buffer, args.tail_soft_buffer]
+		if len([x for x in features if x > 0]) > 0:
 			sys.exit(
 				"--hard_buffer set, so no other buffer flags can be set.")
 
 	if args.soft_buffer > 0:
-		if any(
-			[args.hard_buffer, args.lead_hard_buffer, args.lead_soft_buffer,
-				args.tail_hard_buffer, args.tail_soft_buffer]) > 0:
+		features = [
+			args.hard_buffer, args.lead_hard_buffer, args.lead_soft_buffer,
+			args.tail_hard_buffer, args.tail_soft_buffer]
+		if len([x for x in features if x > 0]) > 0:
 			sys.exit(
 				"--soft_buffer set, so no other buffer flags can be set.")
 
 	if args.lead_hard_buffer > 0:
-		if any(
-			[args.hard_buffer, args.soft_buffer, args.lead_soft_buffer]) > 0:
+		features = [args.hard_buffer, args.soft_buffer, args.lead_soft_buffer]
+		if len([x for x in features if x > 0]) > 0:
 			sys.exit(
 				"--lead_hard_buffer set, so --soft_buffer and --lead_soft_buffer "
 				"cannot be set.")
 
 	if args.lead_soft_buffer > 0:
-		if any(
-			[args.hard_buffer, args.soft_buffer, args.lead_hard_buffer]) > 0:
+		features = [args.hard_buffer, args.soft_buffer, args.lead_hard_buffer]
+		if len([x for x in features if x > 0]) > 0:
 			sys.exit(
 				"--lead_soft_buffer set, so --soft_buffer and --lead_hard_buffer "
 				"cannot be set.")
 
 	if args.tail_hard_buffer > 0:
-		if any(
-			[args.hard_buffer, args.soft_buffer, args.tail_soft_buffer]) > 0:
+		features = [args.hard_buffer, args.soft_buffer, args.tail_soft_buffer]
+		if len([x for x in features if x > 0]) > 0:
 			sys.exit(
 				"--tail_hard_buffer set, so --soft_buffer and --tail_soft_buffer "
 				"cannot be set.")
 
 	if args.tail_soft_buffer > 0:
-		if any(
-			[args.hard_buffer, args.soft_buffer, args.tail_hard_buffer]) > 0:
+		features = [args.hard_buffer, args.soft_buffer, args.tail_hard_buffer]
+		if len([x for x in features if x > 0]) > 0:
 			sys.exit(
 				"--tail_hard_buffer set, so --soft_buffer and --tail_hard_buffer "
 				"cannot be set.")
 
 	if args.min_n > 0:
-		if any(
-			[args.lead_min_n, args.tail_min_n]) > 0:
+		features = [args.lead_min_n, args.tail_min_n]
+		if len([x for x in features if x > 0]) > 0:
 			sys.exit(
 				"--min_n set, so --lead_min_n and tail_min_n cannot be set.")
 
 	if args.lead_min_n > 0:
-		if any(
-			[args.min_n]) > 0:
+		if args.min_n > 0:
 			sys.exit(
 				"--lead_min_n set, so --min_n cannot be set.")
 
 	if args.tail_min_n > 0:
-		if any(
-			[args.tail_min_n]) > 0:
+		if args.tail_min_n > 0:
 			sys.exit(
 				"--tail_min_n set, so --min_n cannot be set.")
 
