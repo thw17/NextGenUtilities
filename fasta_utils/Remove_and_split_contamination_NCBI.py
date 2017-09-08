@@ -76,7 +76,7 @@ def main():
 						if idx == 0:
 							suffix += 1
 							o.write(">{}\n".format(header_id + "_{}".format(suffix)))
-							seq_1 = seq[0:co]
+							seq_1 = seq[0:(co - 1)]
 							length = len(seq_1)
 							if wrap is not None:
 								for i in range(0, length, wrap):
@@ -86,7 +86,7 @@ def main():
 						elif idx % 2 != 0:
 							suffix += 1
 							o.write(">{}\n".format(header_id + "_{}".format(suffix)))
-							seq_1 = seq[co: temp_coord_list[idx + 1]]
+							seq_1 = seq[co: (temp_coord_list[idx + 1] - 1)]
 							length = len(seq_1)
 							if wrap is not None:
 								for i in range(0, length, wrap):
